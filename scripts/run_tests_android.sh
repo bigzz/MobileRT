@@ -114,6 +114,7 @@ gather_logs_func() {
     > "${reports_path}"/logcat_app_"${type}".log;
   set -e;
 
+  printf '\e]8;;file://'"%s"'/'"%s"'/tests/test'"%s"'UnitTest/index.html\aClick here to check the Unit tests report.\e]8;;\a\n' "${PWD}" "${reports_path}" "${typeWithCapitalLetter}";
   printf '\e]8;;file://'"%s"'/'"%s"'/androidTests/connected/index.html\aClick here to check the Android tests report.\e]8;;\a\n' "${PWD}" "${reports_path}";
   printf '\e]8;;file://'"%s"'/'"%s"'/jacoco/jacocoTestReport/html/index.html\aClick here to check the Code coverage report.\e]8;;\a\n' "${PWD}" "${reports_path}";
   printf '\e]8;;file://'"%s"'/'"%s"'/logcat_app_'"%s"'.log\aClick here to check the app log.\e]8;;\a\n' "${PWD}" "${reports_path}" "${type}";
@@ -162,12 +163,7 @@ unlockDevice() {
   callCommandUntilSuccess adb root;
 
   echo 'Wait for device to be ready to unlock.';
-  callCommandUntilSuccess adb kill-server;
-  callCommandUntilSuccess adb kill-server;
-  callCommandUntilSuccess adb kill-server;
-  callCommandUntilSuccess adb disconnect;
-  callCommandUntilSuccess adb disconnect;
-  callCommandUntilSuccess adb disconnect;
+  callCommandUntilSuccess adb start-server;
   set +e;
   # shellcheck disable=SC2009
   GRADLE_DAEMON_PROCESSES=$(ps aux | grep -i "grep -i GradleDaemon" | grep -v "grep" | tr -s ' ' | cut -d ' ' -f 2);
@@ -184,9 +180,6 @@ unlockDevice() {
   set -e;
 
   # Make sure ADB daemon started properly.
-  callCommandUntilSuccess adb start-server;
-  callCommandUntilSuccess adb start-server;
-  callCommandUntilSuccess adb start-server;
   callCommandUntilSuccess adb shell 'ps > /dev/null;';
   # adb shell needs ' instead of ", so 'getprop' works properly.
   # shellcheck disable=SC2016
@@ -201,8 +194,6 @@ unlockDevice() {
   callAdbShellCommandUntilSuccess adb shell 'input tap 800 400; echo ::$?::';
   callAdbShellCommandUntilSuccess adb shell 'input tap 1000 500; echo ::$?::';
 
-  callCommandUntilSuccess adb start-server;
-  callCommandUntilSuccess adb start-server;
   callCommandUntilSuccess adb start-server;
   callCommandUntilSuccess adb get-state;
   callCommandUntilSuccess adb devices -l;
@@ -400,9 +391,11 @@ runUnitTests() {
   echo 'Copy unit tests to Android emulator.';
   ls app/.cxx;
   if [ "${type}" = 'release' ]; then
-    typeWithCapitalLetter='RelWithDebInfo';
+    typeWithDebInfo='RelWithDebInfo';
+  else
+    typeWithDebInfo="${typeWithCapitalLetter}";
   fi
-  dirUnitTests="app/.cxx/${typeWithCapitalLetter}";
+  dirUnitTests="app/.cxx/${typeWithDebInfo}";
   echo 'Checking generated id.';
   # Note: flag `-t` of `ls` is to sort by date (newest first).
   # shellcheck disable=SC2012
